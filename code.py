@@ -37,7 +37,6 @@ from gamepad import (
 
 
 def main():
-    release_displays()
     gc.collect()
     spi = SPI()
 
