@@ -26,6 +26,7 @@
 #
 from board import D9, D10, SPI
 from digitalio import DigitalInOut, Direction
+from displayio import release_displays
 from fourwire import FourWire
 import gc
 from max3421e import Max3421E
@@ -37,6 +38,8 @@ from gamepad import (
 
 
 def main():
+    print("releasing displays")
+    release_displays()
     gc.collect()
     spi = SPI()
 
