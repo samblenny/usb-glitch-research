@@ -41,8 +41,8 @@ sync: bundle
 # Open terminal emulator for CircuitPython USB serial console on Debian.
 # You might need to do `sudo apt install screen` to use this.
 # You might need to add yourself to the dialout group to use this.
-# The serial port device name glob below will break if you have more than one
-# Adafruit dev board only one Adafruit dev board plugged in.
+# The serial port device name glob below ("/dev/...*") will probably break if
+# you have more than one Adafruit dev board plugged in at the same time.
 tty:
 	screen -fn /dev/serial/by-id/usb-Adafruit_* 115200
 
