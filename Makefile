@@ -39,15 +39,15 @@ sync: bundle
 		sync; fi
 
 # Open terminal emulator for CircuitPython USB serial console on Debian.
-# You might need to do `sudo apt install screen` to use this.
-# You might need to add yourself to the dialout group to use this.
+# You might need to do `sudo apt install screen` before using this.
+# You might need to add yourself to the dialout group before using this.
 # The serial port device name glob below ("/dev/...*") will probably break if
 # you have more than one Adafruit dev board plugged in at the same time.
 tty:
 	screen -fn /dev/serial/by-id/usb-Adafruit_* 115200
 
 # Open terminal emulator for Tigard UART on Debian.
-# You might need to do `sudo apt install screen` to use this.
+# You might need to do `sudo apt install screen` before using this.
 # You might need to add Tigard udev rules to get plugdev group perms to
 # access the serial port device.
 tigard:
