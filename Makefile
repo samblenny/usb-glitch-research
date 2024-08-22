@@ -34,9 +34,8 @@ umount:
 # You might need to do `sudo apt install rsync` before using this.
 sync: bundle
 	@if [ -d ${D_CPY} ] ; then \
-		rsync -rcvO ${BUNDLE_SRC} ${D_CPY}; else \
-		echo "${D_CPY} does not exist"; \
-		sync; fi
+		rsync -rcvO ${BUNDLE_SRC} ${D_CPY}; sync; else \
+		echo "${D_CPY} does not exist"; fi
 
 # Open terminal emulator for CircuitPython USB serial console on Debian.
 # You might need to do `sudo apt install screen` before using this.
