@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: Copyright 2024 Sam Blenny
 
-.PHONY: bundle sync tty clean mount umount
+.PHONY: bundle mount umount sync tty tigard clean
 
 # Path to CIRCUITPY on Debian
 D_CPY=/media/CIRCUITPY
