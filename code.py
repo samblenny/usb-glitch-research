@@ -53,25 +53,23 @@ def main():
     # MAIN EVENT LOOP
     # Establish and maintain a gamepad connection
     gp = XInputGamepad()
-    print("Looking for USB gamepad...")
+    FIND_MSG = "[finding gamepad]"
+    print(FIND_MSG)
     while True:
         gc.collect()
         try:
             if gp.find_and_configure(retries=25):
                 # Found a gamepad, so configure it and start polling
                 print(gp.device_info_str())
-                connected = True
                 prev = 0
-                while connected:
-                    (connected, changed, buttons) = gp.poll()
-                    if connected and changed:
+                for buttons in gp.poll():
+                    if (buttons is not None) and (buttons != prev):
                         print(f"{buttons:016b}")
                         prev = buttons
-                    sleep(0.002)
                     gc.collect()
                 # If loop stopped, gamepad connection was lost
-                print("Gamepad disconnected")
-                print("Looking for USB gamepad...")
+                print("[lost connection]")
+                print(FIND_MSG)
             else:
                 # No connection yet, so sleep briefly then try again
                 sleep(0.1)
@@ -80,8 +78,8 @@ def main():
             # low-level USB thing happened which this driver does not yet
             # know how to deal with. So, log the error and keep going
             print(e)
-            print("Gamepad connection error")
-            print("Looking for USB gamepad...")
+            print("[Unexpected USBError]")
+            print(FIND_MSG)
 
 
 main()

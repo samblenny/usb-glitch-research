@@ -19,8 +19,9 @@
 #
 from time import sleep
 from struct import unpack
+from sys import stdout
 from usb import core
-from usb.core import USBError
+from usb.core import USBError, USBTimeoutError
 
 # Gamepad button bitmask constants
 UP     = 0x0001  # dpad: Up
@@ -38,9 +39,6 @@ X      = 0x8000  # button cluster: top button    (Nintendo X, Xbox Y)
 
 class XInputGamepad:
     def __init__(self):
-        # Initialize buffers used in polling USB gamepad events
-        self._prev = 0
-        self.buf64 = bytearray(64)
         # Variable to hold the gamepad's usb.core.Device object
         self.device = None
 
@@ -66,9 +64,7 @@ class XInputGamepad:
 
     def _configure(self, device):
         # Prepare USB gamepad for use (set configuration, drain buffer, etc)
-        #
         # Exceptions: may raise usb.core.USBError or usb.core.USBTimeoutError
-        #
         interface = 0
         timeout_ms = 5
         try:
@@ -86,9 +82,9 @@ class XInputGamepad:
         # when buffer is already empty. If that happens, ignore it.
         try:
             sleep(0.1)
+            buf = bytearray(64)
             for _ in range(8):
-                __ = device.read(0x81, self.buf64, timeout=timeout_ms)
-                self._prev = 0
+                __ = device.read(0x81, buf, timeout=timeout_ms)
         except USBError as e:
             if e.errno is None:
                 pass  # this is okay
@@ -96,17 +92,24 @@ class XInputGamepad:
                 print("[E2]: '%s', %s, '%s'" % (e, type(e), e.errno))
                 self._reset()
                 raise e
-        # All good, so save a reference to the device object
+        # All good, so save reference to device object
         self.device = device
 
     def poll(self):
-        # Poll gamepad for button changes (ignore sticks and triggers)
+        # Generator function for polling gamepad for button changes
         #
-        # Returns a tuple of (valid, changed, buttons):
-        #   connected: True if gamepad is still connected, else False
-        #   changed: True if buttons changed since last call, else False
-        #   buttons: Uint16 containing bitfield of individual button values
+        # Returns: an iterator that yields the button state, which is
+        # either None (temporary error condition) or an integer bitfield with
+        # the current button state. (see gamepad button bitmask constants
+        # defined at the top of this file)
         # Exceptions: may raise usb.core.USBError or usb.core.USBTimeoutError
+        #
+        # Usage:
+        #     prev = 0
+        #     for buttons = gamepad.poll():
+        #         if (buttons is not None) and (prev != buttons):
+        #             # (do stuff to handle the changed button state)
+        #             prev = buttons
         #
         # Expected endpoint 0x81 report format:
         #  bytes 0,1:    prefix that doesn't change      [ignored]
@@ -121,28 +124,52 @@ class XInputGamepad:
         #
         if self.device is None:
             # caller is trying to poll when gamepad is not connected
-            return (False, False, None)
-        timeout_ms = 5
+            return
+        # Cache functions and object references as local variables to avoid
+        # spending VM time on dictionary lookups. This is a technique commonly
+        # used for MicroPython performance optimization.
+        read_ = self.device.read
+        unpack_ = unpack
+        prev = 0
+        buf = bytearray(64)
+        err_count = 0
+        MAX_ERRORS = 99
+        ms = 10
         endpoint = 0x81
-        try:
-            # Poll gamepad endpoint to get button and joystick status bytes
-            n = self.device.read(endpoint, self.buf64, timeout=timeout_ms)
-            if n < 14:
-                # skip unexpected responses (too short to be a full report)
-                return (True, False, None)
-            # Only bytes 2 and 3 are interesting (ignore sticks/triggers)
-            (buttons,) = unpack('<H', self.buf64[2:4])
-            if buttons != self._prev:
-                # button state has changed since previous polling
-                self._prev = buttons
-                return (True, True, buttons)
+        # This generator loop uses yield instead of return. The point of this
+        # is to make USB IO faster by keeping local variables alive in the
+        # original stack frame (particularly the bytearray) so we can spend
+        # less Python VM time on dictionary lookups and heap allocations.
+        # Docs: https://docs.python.org/3/glossary.html#term-generator
+        while True:
+            try:
+                # Poll gamepad endpoint
+                try:
+                    n = read_(endpoint, buf, timeout=ms)
+                except USBTimeoutError:
+                    # Immediately retry if first read timed out
+                    n = read_(endpoint, buf, timeout=ms)
+                # Only bytes 2 and 3 are interesting (ignore sticks/triggers)
+                (buttons,) = unpack_('<H', buf[2:4])
+                yield buttons
+            except USBTimeoutError as e:
+                # Log USB timeouts
+                stdout.write(b"[E3 timeout]\n")
+                yield None
+            except USBError as e:
+                # Handle other USB errors
+                stdout.write("[E4]: '%s', %s, '%s'\n" % (e, type(e), e.errno))
+                err_count += 1
+                if err_count > MAX_ERRORS:
+                    # Stop loop if there were too many errors in a row
+                    self._reset()
+                    raise e
+                else:
+                    # yield for error if the error counter is still small
+                    yield None
             else:
-                # button state is the same as it was last time
-                return (True, False, buttons)
-        except USBError as e:
-            print("[E3]: '%s', %s, '%s'" % (e, type(e), e.errno))
-            self._reset()
-            raise e
+                # reset error counter if device.read() didn't raise exception
+                err_count = 0
 
     def device_info_str(self):
         # Return string describing gamepad device (or lack thereof)
@@ -156,9 +183,8 @@ class XInputGamepad:
             return "[bad vid:pid]: vid=%s, pid=%s, prod='%s', mfg='%s'" % (
                 v, pi, pr, m)
         else:
-            return "Connected: %04x:%04x prod='%s' mfg='%s'" % (v, pi, pr, m)
+            return "Connect: %04x:%04x prod='%s' mfg='%s'" % (v, pi, pr, m)
 
     def _reset(self):
         # Reset USB device and gamepad button polling state
         self.device = None
-        self._prev = 0
