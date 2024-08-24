@@ -58,7 +58,7 @@ Notes on tracking down CircuitPython USB stack glitches
 
 This is the procedure to set up CircuitPython ESP32-S3 build on Debian
 Bookworm. These are distilled from the
-[Building CircuitPython](https://learn.adafruit.com/building-circuitpython),
+[Building CircuitPython Learn Guide](https://learn.adafruit.com/building-circuitpython),
 and various related documentation that the guide links to. When the notes below
 refer to sections of "the learn guide", that means the Building CircuitPython
 learn guide.
