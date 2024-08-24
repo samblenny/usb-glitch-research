@@ -56,29 +56,47 @@ Notes on tracking down CircuitPython USB stack glitches
 
 ## Building CircuitPython for ESP32-S3
 
-Procedure to set up CircuitPython ESP32-S3 build on Debian Bookworm
+This is the procedure to set up CircuitPython ESP32-S3 build on Debian
+Bookworm. These are distilled from the
+[Building CircuitPython](https://learn.adafruit.com/building-circuitpython),
+and various related documentation that the guide links to. When the notes below
+refer to sections of "the learn guide", that means the Building CircuitPython
+learn guide.
 
-1. Fork adafruit/circuitpython and clone the fork
+1. Clone adafruit/circuitpython (or your own fork of the circuitpython repo):
 
-2. Follow instructions from the Building CircuitPython learn guide's
+    ```
+    $ cd ~/code
+    $ git clone https://github.com/adafruit/circuitpython.git
+    ```
+
+2. Follow instructions from the learn guide's
    [Linux Setup](https://learn.adafruit.com/building-circuitpython/linux)
    page to install build dependency packages:
 
-   ```
-   sudo apt install build-essential git git-lfs gettext cmake python3-venv
-   ```
+    ```
+    $ sudo apt install build-essential git git-lfs gettext cmake python3-venv
+    ```
 
 3. Follow instructions from the learn guide's
-   [Espressif Builds](https://learn.adafruit.com/building-circuitpython/espressif-build)
-   page to get started installing espressif port requirements. The learn guide
-   links to the
-   [ports/espressif/README.rst
-    ](https://github.com/adafruit/circuitpython/blob/main/ports/espressif/README.rst)
-   file from the adafruit/circuitpython github repo.
+   [Build CircuitPython](https://learn.adafruit.com/building-circuitpython/build-circuitpython)
+   section to fetch submodules for the Espressif port:
 
     ```
-    $ cd circuitpython/ports/espressif/
+    $ cd ~/code/circuitpython/ports/espressif
     $ make fetch-port-submodules
+    ```
+
+4. Follow instructions from the learn guide's
+   [Espressif Builds](https://learn.adafruit.com/building-circuitpython/espressif-build)
+   page to install ESP-IDF, which is needed to build for ESP32-S3 boards. Some
+   of these steps come from the
+   [ports/espressif/README.rst](https://github.com/adafruit/circuitpython/blob/main/ports/espressif/README.rst)
+   file which the Expressif Builds learn guide page links to.
+
+    ```
+    $ cd ~/code/circuitpython/ports/espressif/
+    $ ./esp-idf/install.sh
     ```
 
 ... (TODO: install esp-idf, etc)
